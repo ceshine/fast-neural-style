@@ -36,7 +36,7 @@ def load_and_preprocess(image_file):
         transforms.ToTensor(),
         tensor_normalizer()])
     img_tensor = transform(img).unsqueeze(0)
-    return Variable(img_tensor, volatile=True)
+    return img_tensor
 
 
 def transform(model_file, image_file, target_path):
