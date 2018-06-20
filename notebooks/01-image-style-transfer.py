@@ -300,14 +300,14 @@ Image.fromarray(recover_image(img_output.data.cpu().numpy())[0])
 # In[39]:
 
 
-save_model_path = "model_rain_princess_cropped.pth"
+save_model_path = "../models/model_rain_princess_cropped.pth"
 torch.save(transformer.state_dict(), save_model_path)
 
 
 # In[7]:
 
 
-save_model_path = "model_rain_princess_cropped.pth"
+save_model_path = "../models/model_rain_princess_cropped.pth"
 transformer.load_state_dict(torch.load(save_model_path))
 
 

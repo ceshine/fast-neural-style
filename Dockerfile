@@ -6,7 +6,7 @@ RUN conda install -y jupyter && \
     conda clean -tipsy
 
 RUN pip install --upgrade pip && \
-    pip install jupyter_contrib_nbextensions tqdm && \
+    pip install jupyter_contrib_nbextensions tqdm docopt && \
     jupyter contrib nbextension install --user && \
     jupyter nbextension enable collapsible_headings/main && \
     rm -rf ~/.cache/pip
