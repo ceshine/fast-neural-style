@@ -1,0 +1,9 @@
+*.png
+*.jpg
+*.jpeg
+*/__pycache__
+*Copy*
+*.pth
+.ipynb_checkpoints/
+videos
+*~
