@@ -7,3 +7,7 @@
 .ipynb_checkpoints/
 videos
 *~
+.jupyter
+.local
+.cache
+.ipython

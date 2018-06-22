@@ -67,14 +67,18 @@ train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, **
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 with torch.no_grad():
-    vgg_model = vgg.vgg16(pretrained=True)
-    vgg_model.to(device)
-    loss_network = LossNetwork(vgg_model)
+    loss_network = LossNetwork()
+    loss_network.to(device)
 loss_network.eval()
-del vgg_model
 
 
 # In[5]:
+
+
+loss_network
+
+
+# In[6]:
 
 
 STYLE_IMAGE = "../style_images/mosaic.jpg"
@@ -91,7 +95,7 @@ with torch.no_grad():
 
 # Sanity check:
 
-# In[6]:
+# In[7]:
 
 
 plt.imshow(recover_image(style_img_tensor.cpu().numpy())[0])
@@ -99,7 +103,7 @@ plt.imshow(recover_image(style_img_tensor.cpu().numpy())[0])
 
 # Precalculate gram matrices of the style image:
 
-# In[7]:
+# In[8]:
 
 
 # http://pytorch.org/docs/master/notes/autograd.html#volatile
@@ -108,24 +112,18 @@ with torch.no_grad():
     gram_style = [gram_matrix(y) for y in style_loss_features]
 
 
-# In[8]:
-
-
-style_loss_features._fields
-
-
 # In[9]:
 
 
-for i in range(len(style_loss_features)):
-    print(i, np.mean(gram_style[i].cpu().numpy()))
+style_loss_features._fields
 
 
 # In[10]:
 
 
 for i in range(len(style_loss_features)):
-    print(i, np.mean(style_loss_features[i].cpu().numpy()))
+    tmp = style_loss_features[i].cpu().numpy()
+    print(i, np.mean(tmp), np.std(tmp))
 
 
 # In[11]:
@@ -171,19 +169,8 @@ transformer.to(device)
 # In[15]:
 
 
-CONTENT_WEIGHT = 1
-STYLE_WEIGHTS = np.array([1e4, 1e4, 1e3, 1e3]) * 2
-REGULARIZATION = 1e-6
-NOISE_P = 0.1
-NOISE_STD = 0.5
-NOISE_WEIGHT = 10 * 2
-LOG_INTERVAL = 50
-
-LR = 1e-3
-optimizer = Adam(transformer.parameters(), LR)
-
 torch.set_default_tensor_type('torch.FloatTensor')
-    
+   
 def train(steps, base_steps=0):
     transformer.train()
     count = 0
@@ -212,14 +199,14 @@ def train(steps, base_steps=0):
                         
             with torch.no_grad():
                 xc = x.detach()
-
+                features_xc = loss_network(xc)
+            
             features_y = loss_network(y)
-            features_xc = loss_network(xc)
-
+            
             with torch.no_grad():
-                f_xc_c = features_xc[1].detach()
+                f_xc_c = features_xc[2].detach()
 
-            content_loss = CONTENT_WEIGHT * mse_loss(features_y[1], f_xc_c)
+            content_loss = CONTENT_WEIGHT * mse_loss(features_y[2], f_xc_c)
 
             reg_loss = REGULARIZATION * (
                 torch.sum(torch.abs(y[:, :, :, :-1] - y[:, :, :, 1:])) + 
@@ -275,49 +262,64 @@ len(train_loader)
 # In[17]:
 
 
-train(1000, 0)
+CONTENT_WEIGHT = 1
+STYLE_WEIGHTS = np.array([1e-1, 1, 1e1, 5, 1e1]) * 5e3
+REGULARIZATION = 1e-6
+NOISE_P = 0.2
+NOISE_STD = 0.35
+NOISE_WEIGHT = 10 * 2
+LOG_INTERVAL = 50
+
+LR = 1e-3
+optimizer = Adam(transformer.parameters(), LR)
 
 
 # In[18]:
 
 
-troptimizer = Adam(transformer.parameters(), LR * 0.5)
+train(1000, 0)
 
 
 # In[19]:
 
 
-train(3000, 1000)
+optimizer = Adam(transformer.parameters(), LR * 0.5)
 
 
 # In[20]:
 
 
-save_model_path = "../models/mosaic_4000.pth"
-torch.save(transformer.state_dict(), save_model_path)
+train(3000, 1000)
 
 
 # In[21]:
 
 
-optimizer = Adam(transformer.parameters(), LR * 0.1)
+save_model_path = "../models/mosaic_4000_vgg19.pth"
+torch.save(transformer.state_dict(), save_model_path)
 
 
 # In[22]:
+
+
+optimizer = Adam(transformer.parameters(), LR * 0.1)
+
+
+# In[23]:
 
 
 LOG_INTERVAL = 100
 train(6000, 4000)
 
 
-# In[23]:
+# In[24]:
 
 
-save_model_path = "../models/mosaic_10000.pth"
+save_model_path = "../models/mosaic_10000_vgg19.pth"
 torch.save(transformer.state_dict(), save_model_path)
 
 
-# In[24]:
+# In[25]:
 
 
 import glob
@@ -325,16 +327,16 @@ fnames = glob.glob(DATASET + r"/*/*")
 len(fnames)
 
 
-# In[25]:
+# In[26]:
 
 
 transformer = transformer.eval()
 
 
-# In[26]:
+# In[47]:
 
 
-img = Image.open(fnames[40]).convert('RGB')
+img = Image.open(fnames[70]).convert('RGB')
 transform = transforms.Compose([
                                 
                                 transforms.ToTensor(),
@@ -347,16 +349,15 @@ img_output = transformer(Variable(img_tensor, volatile=True))
 plt.imshow(recover_image(img_tensor.cpu().numpy())[0])
 
 
-# In[27]:
+# In[48]:
 
 
 Image.fromarray(recover_image(img_output.data.cpu().numpy())[0])
 
 
-# In[28]:
+# In[51]:
 
 
-img = Image.open(fnames[40]).convert('RGB')
 transform = transforms.Compose([
                                 transforms.Resize(IMAGE_SIZE),
                                 transforms.ToTensor(),
@@ -366,16 +367,10 @@ if torch.cuda.is_available():
     img_tensor = img_tensor.cuda()
 
 img_output = transformer(Variable(img_tensor, volatile=True))
-plt.imshow(recover_image(img_tensor.cpu().numpy())[0])
-
-
-# In[29]:
-
-
 Image.fromarray(recover_image(img_output.data.cpu().numpy())[0])
 
 
-# In[30]:
+# In[31]:
 
 
 img = Image.open("../content_images/amber.jpg").convert('RGB')
@@ -392,13 +387,13 @@ img_output = transformer(Variable(img_tensor, volatile=True))
 plt.imshow(recover_image(img_tensor.cpu().numpy())[0])
 
 
-# In[31]:
+# In[32]:
 
 
 plt.imshow(recover_image(img_output.data.cpu().numpy())[0])
 
 
-# In[32]:
+# In[33]:
 
 
 img = Image.open("../content_images/amber.jpg").convert('RGB')
@@ -415,7 +410,7 @@ img_output = transformer(Variable(img_tensor, volatile=True))
 plt.imshow(recover_image(img_output.data.cpu().numpy())[0])
 
 
-# In[33]:
+# In[34]:
 
 
 output_img = Image.fromarray(recover_image(img_output.data.cpu().numpy())[0])
