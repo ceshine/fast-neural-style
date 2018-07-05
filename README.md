@@ -1,10 +1,11 @@
 # fast-neural-style
 
-2018-10 Update:
+July 2018 Update:
 
 1. Upgrade to PyTorch 0.4.0.
 2. Minor Refactor.
 3. Allow assigning an independent style weight for each layer.
+4. Provide a Dockerfile
 
 The code to the [first blog post about this project ](https://medium.com/@ceshine/pytorch-implementation-of-perceptual-losses-for-real-time-style-transfer-8d608e2e9902) can be found in tag **[201707]()**.
 
