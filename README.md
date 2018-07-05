@@ -7,7 +7,7 @@ July 2018 Update:
 3. Allow assigning an independent style weight for each layer.
 4. Provide a Dockerfile
 
-The code to the [first blog post about this project ](https://medium.com/@ceshine/pytorch-implementation-of-perceptual-losses-for-real-time-style-transfer-8d608e2e9902) can be found in tag **[201707]()**.
+The code to the [first blog post about this project ](https://medium.com/@ceshine/pytorch-implementation-of-perceptual-losses-for-real-time-style-transfer-8d608e2e9902) can be found in tag **[201707](https://github.com/ceshine/fast-neural-style/tree/201707)**.
 
 ## Stylize Script Usage Example
 ```
